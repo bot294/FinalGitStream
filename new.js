@@ -1,8 +1,8 @@
 new_fun1();
-function add(a, b)
+function add_fun(a, b)
 {
   return a + b;
 }
 function new_fun1() {
-  console.log(add(2, 3));
+  console.log(add_fun(2, 3));
 }
