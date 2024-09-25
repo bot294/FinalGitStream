@@ -1,0 +1,21 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always" // Set this to true to fix all ESLint issues on save
+  },
+  "eslint.format.enable": true, // Allow ESLint to format the code
+  "eslint.debug": false, // Keep ESLint debug logs off for now
+  "eslint.enable": true, // Ensure ESLint is enabled
+  "eslint.alwaysShowStatus": true, // Show the ESLint status in the bottom bar
+  "eslint.codeActionsOnSave.mode": "all", // Apply all auto-fixes on save
+  "eslint.notebooks.rules.customizations": [], // You can add custom rule overrides here if needed
+  "eslint.codeAction.showDocumentation": {
+    "enable": false // Keep the rule documentation action disabled
+  },
+  "eslint.codeAction.disableRuleComment": {
+    "location": "sameLine", // Place disable comments on the same line as the rule
+    "commentStyle": "block" // Use block-style comments to disable rules
+  },
+  "editor.formatOnSave": true, // Ensure the code is auto-formatted on save
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint", // Set ESLint as the default formatter
+  "files.autoSave": "onFocusChange" // Optionally auto-save when you switch focus
+}
