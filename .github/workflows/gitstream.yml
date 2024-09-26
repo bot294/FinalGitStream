@@ -1,4 +1,8 @@
 name: gitStream and ESLint Checks
+permissions:
+  contents: read
+  statuses: write
+
 on:
   pull_request:
     branches: [main]
