@@ -1,3 +1,4 @@
+# -*- mode: yaml -*-
 name: gitStream and ESLint Checks
 
 on:
@@ -54,7 +55,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20.15.1'
+          node-version: '20.15.1' # Make sure this version aligns with your Node version
       - run: npm ci
       - name: Run ESLint
         run: npx eslint . --config eslint.config.js --format json --output-file eslint-results.json
@@ -70,7 +71,7 @@ jobs:
             echo "eslint_failed=false" >> $GITHUB_OUTPUT
           fi
       - name: Annotate ESLint results
-        uses: ataylorme/eslint-annotate-action@v2-alpha
+        uses: ataylorme/eslint-annotate-action@v1 # Changed to a stable version
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           report-json: "eslint-results.json"
@@ -78,7 +79,7 @@ jobs:
         if: always()
         uses: actions/github-script@v6
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const eslint_failed = '${{ steps.check-eslint.outputs.eslint_failed }}' === 'true';
             github.rest.repos.createCommitStatus({
@@ -91,4 +92,4 @@ jobs:
             });
             if (eslint_failed) {
               core.setFailed('ESLint check failed');
-            }
+            });
