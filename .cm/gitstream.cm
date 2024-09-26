@@ -37,7 +37,15 @@ automations:
       - action: explain-code-experts@v1 
         args:
           gt: 10 
-
+  auto_merge:
+    if:
+      - {{ is.approved }}
+      - {{ is.green }}
+    run:
+      - action: merge@v1
+        args:
+          wait_for_all_checks: true
+          rebase_on_merge: true
 
 # +----------------------------------------------------------------------------+
 # | Custom Expressions                                                         |
@@ -50,7 +58,9 @@ calc:
 has:
   jira_ticket_in_title: {{ pr.title | includes(regex=r/\b[A-Za-z]+-\d+\b/) }}
   jira_ticket_in_desc: {{ pr.description | includes(regex=r/atlassian.net\/browse\/\w{1,}-\d{3,4}/) }}
-
+is:
+  approved: {{ approved.required <= approved.count }}
+  green: {{ check.conclusion == "success" }}
 colors:
   red: 'b60205'
   yellow: 'fbca04'
