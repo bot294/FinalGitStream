@@ -1,3 +1,4 @@
+# GitStream configuration (gitstream.cm file content)
 # -*- mode: yaml -*-
 manifest:
   version: 1.0
@@ -33,7 +34,7 @@ automations:
     if:
       - true
     run:
-      - action: explain-code-experts@v1 
+      - action: explain-code-experts@v1
         args:
           gt: 10
 
