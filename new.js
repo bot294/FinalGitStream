@@ -4,7 +4,7 @@
  * @returns {number} - The factorial of the number.
  * @throws {Error} - Throws an error if the input is not a non-negative integer.
  */
-function factorial(n) {
+function factorial_Func(n) {
     if (typeof n !== "number" || n < 0 || !Number.isInteger(n)) {
         throw new Error("Input must be a non-negative integer");
     }
@@ -18,9 +18,9 @@ function factorial(n) {
 
 // Example usage
 try {
-    console.log(factorial(5)); // Output: 120
-    console.log(factorial(0)); // Output: 1
-    console.log(factorial(-1)); // Throws error
+    console.log(factorialFunc(5)); // Output: 120
+    console.log(factorialFunc(0)); // Output: 1
+    console.log(factorialFunc(-1)); // Throws error
 } catch (error) {
     console.error(error.message);
 }
