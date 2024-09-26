@@ -1,3 +1,4 @@
+
 name: gitStream and ESLint Checks
 permissions:
   contents: read
@@ -82,7 +83,6 @@ jobs:
               context: 'gitStream workflow automation',
               description: 'gitStream job completed with status: ${{ job.status }}'
             })
-
   lint:
     runs-on: ubuntu-latest
     name: ESLint Check
