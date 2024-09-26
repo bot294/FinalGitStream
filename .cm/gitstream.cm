@@ -1,11 +1,20 @@
 # -*- mode: yaml -*-
-# This example configuration for provides basic automations to get started with gitStream.
-# View the gitStream quickstart for more examples: https://docs.gitstream.cm/examples/
 manifest:
   version: 1.0
 
-
 automations:
+  # Automatically assign code experts to the PR
+  assign_code_experts:
+    if:
+      - true
+    run:
+      - action: add-reviewers@v1
+        args:
+          reviewers: {{ repo | codeExperts(gt=10) }}
+      - action: explain-code-experts@v1 
+        args:
+          gt: 10
+
   # Add a label that indicates how many minutes it will take to review the PR.
   estimated_time_to_review:
     if:
@@ -14,7 +23,8 @@ automations:
       - action: add-label@v1
         args:
           label: "{{ calc.etr }} min review"
-          color: {{ colors.red if (calc.etr >= 20) else ( colors.yellow if (calc.etr >= 5) else colors.green ) }}
+          color: {{ colors.red if (calc.etr >= 20) else (colors.yellow if (calc.etr >= 5) else colors.green) }}
+
   # Inform PR authors when they fail to reference Jira tickets in the PR title or description.
   label_missing_jira_info:
     if:
@@ -29,27 +39,29 @@ automations:
           comment: |
             This PR is missing a Jira ticket reference in the title or description.
             Please add a Jira ticket reference to the title or description of this PR.
-  # Post a comment that lists the best experts for the files that were modified.
-  explain_code_experts:
+
+  # Automatically merge PR when all checks pass and it's approved
+  auto_merge:
     if:
-      - true
+      - {{ is.approved }}
+      - {{ is.green }}
     run:
-      - action: explain-code-experts@v1 
+      - action: merge@v1
         args:
-          gt: 10 
+          wait_for_all_checks: true
+          rebase_on_merge: true
 
-
-# +----------------------------------------------------------------------------+
-# | Custom Expressions                                                         |
-# | https://docs.gitstream.cm/how-it-works/#custom-expressions                 |
-# +----------------------------------------------------------------------------+
-
+# Custom Expressions
 calc:
   etr: {{ branch | estimatedReviewTime }}
 
 has:
   jira_ticket_in_title: {{ pr.title | includes(regex=r/\b[A-Za-z]+-\d+\b/) }}
   jira_ticket_in_desc: {{ pr.description | includes(regex=r/atlassian.net\/browse\/\w{1,}-\d{3,4}/) }}
+
+is:
+  approved: {{ approved.required <= approved.count }}
+  green: {{ check.conclusion == "success" }}
 
 colors:
   red: 'b60205'
