@@ -1,12 +1,11 @@
 # -*- mode: yaml -*-
-# This example configuration for provides basic automations to get started with gitStream.
-# View the gitStream quickstart for more examples: https://docs.gitstream.cm/examples/
+# This configuration enforces coding standards and integrates with SonarCloud for static code analysis.
+
 manifest:
   version: 1.0
 
-
 automations:
-  # Add a label that indicates how many minutes it will take to review the PR.
+  # 1. Add a label that indicates how many minutes it will take to review the PR.
   estimated_time_to_review:
     if:
       - true
@@ -15,7 +14,8 @@ automations:
         args:
           label: "{{ calc.etr }} min review"
           color: {{ colors.red if (calc.etr >= 20) else ( colors.yellow if (calc.etr >= 5) else colors.green ) }}
-  # Inform PR authors when they fail to reference Jira tickets in the PR title or description.
+
+  # 2. Inform PR authors when they fail to reference Jira tickets in the PR title or description.
   label_missing_jira_info:
     if:
       - {{ not (has.jira_ticket_in_title or has.jira_ticket_in_desc) }}
@@ -29,27 +29,77 @@ automations:
           comment: |
             This PR is missing a Jira ticket reference in the title or description.
             Please add a Jira ticket reference to the title or description of this PR.
-  # Post a comment that lists the best experts for the files that were modified.
+
+  # 3. Check SonarCloud issues.
+  check_sonarcloud_issues:
+    if:
+      - {{ sonarcloud.qualityGate.status != "passed" }}
+    run:
+      - action: add-label@v1
+        args:
+          label: "SonarCloud Issues"
+          color: {{ colors.red }}
+      - action: add-comment@v1
+        args:
+          comment: |
+            The SonarCloud Quality Gate has not passed. Please resolve the issues reported by SonarCloud before submitting the PR for review.
+
+  # 4. Enforce coding standards (variable naming, directory structure, and more).
+  enforce_coding_standards:
+    if:
+      - {{ !has.correct_variable_naming or !has.correct_directory_structure }}
+    run:
+      - action: add-label@v1
+        args:
+          label: "Coding Standards Violation"
+          color: {{ colors.red }}
+      - action: add-comment@v1
+        args:
+          comment: |
+            The PR violates coding standards. Please ensure the following:
+            - Variables should use snake_case.
+            - Enums, Classes, and Interfaces should be in the utility directory.
+            - No inter-microservice imports. Use a library if needed.
+            - Add JS doc-style comments.
+            - Ensure test suites are written with descriptions before starting the code.
+
+  # 5. Check if PR description includes all required elements.
+  check_pr_description:
+    if:
+      - {{ not (has.correct_pr_description and has.proper_labels) }}
+    run:
+      - action: add-label@v1
+        args:
+          label: "Incomplete PR"
+          color: {{ colors.red }}
+      - action: add-comment@v1
+        args:
+          comment: |
+            The PR is incomplete. Ensure the following are included:
+            - Link to the relevant Jira ticket.
+            - Short description of the solution.
+            - Proper labels for the PR.
+
+  # 6. Post a comment that lists the best experts for the files that were modified.
   explain_code_experts:
     if:
       - true
     run:
-      - action: explain-code-experts@v1 
+      - action: explain-code-experts@v1
         args:
-          gt: 10 
+          gt: 10
 
-
-# +----------------------------------------------------------------------------+
-# | Custom Expressions                                                         |
-# | https://docs.gitstream.cm/how-it-works/#custom-expressions                 |
-# +----------------------------------------------------------------------------+
-
+# Custom expressions to check coding standards and PR details.
 calc:
   etr: {{ branch | estimatedReviewTime }}
 
 has:
   jira_ticket_in_title: {{ pr.title | includes(regex=r/\b[A-Za-z]+-\d+\b/) }}
   jira_ticket_in_desc: {{ pr.description | includes(regex=r/atlassian.net\/browse\/\w{1,}-\d{3,4}/) }}
+  correct_variable_naming: {{ files | all(f => f.content | match(/^[a-z]+(_[a-z]+)*$/)) }}
+  correct_directory_structure: {{ branch | matches("utility/*") }}
+  correct_pr_description: {{ pr.description | includes("Solution") }}
+  proper_labels: {{ pr.labels | includes("bug", "enhancement", "feature") }}
 
 colors:
   red: 'b60205'
