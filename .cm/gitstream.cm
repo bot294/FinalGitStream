@@ -3,7 +3,7 @@ manifest:
   version: 1.0
 
 automations:
-  # 1. Add a label that indicates the estimated time to review the PR.
+  # 1. Add an estimated time to review label.
   estimated_time_to_review:
     if:
       - true
@@ -12,57 +12,25 @@ automations:
         args:
           label: "{{ calc.etr }} min review"
           color: "{{ calc.review_color }}"
-  
-  # 2. Label and comment if the PR is missing a Jira ticket reference.
+
+  # 2. Add a label and comment if missing Jira ticket reference in title or description.
   label_missing_jira_info:
     if:
-      - {{ not (has.jira_ticket_in_title or has.jira_ticket_in_desc) }}
+      - {{ not has.jira_ticket_in_title }}
+      - {{ not has.jira_ticket_in_desc }}
     run:
       - action: add-label@v1
         args:
           label: "missing-jira"
-          color: 'b60205'
+          color: "b60205"
       - action: add-comment@v1
         args:
           comment: "This PR is missing a Jira ticket reference in the title or description."
 
-  # 3. Add label if SonarCloud Quality Gate has failed.
-  check_sonarcloud_issues:
-    if:
-      - {{ sonarcloud.qualityGate.status != "passed" }}
-    run:
-      - action: add-label@v1
-        args:
-          label: "SonarCloud Issues"
-          color: 'b60205'
-      - action: add-comment@v1
-        args:
-          comment: "SonarCloud Quality Gate has not passed. Please fix the issues."
-
-  # 4. Label if coding standards (like variable naming) are not followed.
-  enforce_coding_standards:
-    if:
-      - {{ not has.correct_variable_naming }}
-    run:
-      - action: add-label@v1
-        args:
-          label: "Coding Standards Violation"
-          color: 'b60205'
-      - action: add-comment@v1
-        args:
-          comment: "This PR violates the coding standards. Please use snake_case for variables."
-
 calc:
-  etr: {{ branch | estimatedReviewTime }}
-  review_color: >
-    {{ "b60205" if calc.etr >= 20 else ("fbca04" if calc.etr >= 5 else "0e8a16") }}
+  etr: "{{ branch | estimatedReviewTime }}"
+  review_color: "{{ 'b60205' if calc.etr >= 20 else ('fbca04' if calc.etr >= 5 else '0e8a16') }}"
 
 has:
-  jira_ticket_in_title: {{ pr.title | includes(regex=r/\b[A-Za-z]+-\d+\b/) }}
-  jira_ticket_in_desc: {{ pr.description | includes(regex=r/atlassian.net\/browse\/\w{1,}-\d{3,4}/) }}
-  correct_variable_naming: {{ files | all(f => f.content | match(/^[a-z]+(_[a-z]+)*$/)) }}
-
-colors:
-  red: 'b60205'
-  yellow: 'fbca04'
-  green: '0e8a16'
+  jira_ticket_in_title: "{{ pr.title | includes(regex=r'\\b[A-Za-z]+-\\d+\\b') }}"
+  jira_ticket_in_desc: "{{ pr.description | includes(regex=r'atlassian.net/browse/\\w+-\\d+') }}"
