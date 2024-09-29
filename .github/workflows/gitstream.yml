@@ -1,4 +1,3 @@
-
 name: gitStream and ESLint Checks
 permissions:
   contents: read
@@ -36,21 +35,24 @@ jobs:
   gitStream:
     runs-on: ubuntu-latest
     name: gitStream workflow automation
+    permissions:
+     contents: read
+     statuses: write
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.6
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.x'
       
       - name: Install dependencies
         run: npm ci
       
       - name: Evaluate GitStream Rules
-        uses: linear-b/gitstream-github-action@v2-alpha
+        uses: linear-b/gitstream-github-action@v2
         id: rules-engine
         continue-on-error: true
         with:
@@ -71,7 +73,7 @@ jobs:
       
       - name: Report gitStream status
         if: always()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -83,12 +85,13 @@ jobs:
               context: 'gitStream workflow automation',
               description: 'gitStream job completed with status: ${{ job.status }}'
             })
+
   lint:
     runs-on: ubuntu-latest
     name: ESLint Check
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.6
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -104,7 +107,7 @@ jobs:
       
       - name: Report ESLint status
         if: always()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
