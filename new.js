@@ -20,7 +20,7 @@ function factorial(n) {
 try {
     console.log(factorial(5)); // Output: 120
     console.log(factorial(0)); // Output: 1
-    console.log(factorial(-1)); // Throws error
+    console.log(factorial(1)); // Throws error
 } catch (error) {
     console.error(error.message);
 }
