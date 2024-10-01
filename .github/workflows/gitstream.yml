@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     name: gitStream workflow automation
     permissions:
-     contents: read
+     contents: write
      statuses: write
     timeout-minutes: 10
     steps:
