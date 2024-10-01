@@ -36,8 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     name: gitStream workflow automation
     permissions:
-     contents: write
-     statuses: write
+      contents: read
+      statuses: write
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -51,6 +51,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Set origin remote
+        run: |
+          git remote set-url origin https://github.com/${{ github.repository }}
+
+      - name: Set up remote upstream
+        run: |
+          git remote add upstream https://github.com/bot294/FinalGitStream.git
+
       - name: Evaluate GitStream Rules
         uses: linear-b/gitstream-github-action@v2
         id: rules-engine
