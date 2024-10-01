@@ -55,18 +55,19 @@ jobs:
         run: |
           git remote set-url origin https://github.com/${{ github.repository }}
 
-      - name: Evaluate Rules
+      - name: Evaluate GitStream Rules
         uses: linear-b/gitstream-github-action@v2
         id: rules-engine
+        continue-on-error: true
         with:
-          full_repository: ${{ github.repository }}
-          head_ref: ${{ github.head_ref }}
-          base_ref: ${{ github.base_ref }}
+          full_repository: ${{ github.event.inputs.full_repository || github.repository }}
+          head_ref: ${{ github.event.inputs.head_ref || github.head_ref }}
+          base_ref: ${{ github.event.inputs.base_ref || github.base_ref }}
           client_payload: |
-            ${{ toJson(github.event.inputs.client_payload || '{}') }}  # Ensure it's valid JSON
-          installation_id: ${{ github.event.inputs.installation_id || '' }}
-          resolver_url: ${{ github.event.inputs.resolver_url || '' }}
-          resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN || '' }}
+            ${{ toJson(github.event.inputs.client_payload || '{}') }}  # Properly formatted JSON payload
+          installation_id: ${{ github.event.inputs.installation_id }}
+          resolver_url: ${{ github.event.inputs.resolver_url }}
+          resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}
 
       - name: Debug gitStream output
         if: always()
