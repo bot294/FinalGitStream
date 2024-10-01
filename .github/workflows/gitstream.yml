@@ -1,6 +1,6 @@
 name: gitStream and ESLint Checks
 permissions:
-  contents: write
+  contents: read
   statuses: write
 
 on:
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     name: gitStream workflow automation
     permissions:
-     contents: write
+     contents: read
      statuses: write
     timeout-minutes: 10
     steps:
@@ -89,8 +89,6 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     name: ESLint Check
-    permissions:
-     contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.6
