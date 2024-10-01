@@ -42,12 +42,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.6
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
-      
+
       - name: Install dependencies
         run: npm ci
 
@@ -59,20 +59,21 @@ jobs:
         uses: linear-b/gitstream-github-action@v2
         id: rules-engine
         with:
-          full_repository: ${{ github.event.inputs.full_repository }}
-          head_ref: ${{ github.event.inputs.head_ref }}
-          base_ref: ${{ github.event.inputs.base_ref }}
-          client_payload: ${{ github.event.inputs.client_payload }}
-          installation_id: ${{ github.event.inputs.installation_id }}
-          resolver_url: ${{ github.event.inputs.resolver_url }}
-          resolver_token: ${{ github.event.inputs.resolver_token }}
-      
+          full_repository: ${{ github.repository }}
+          head_ref: ${{ github.head_ref }}
+          base_ref: ${{ github.base_ref }}
+          client_payload: |
+            ${{ toJson(github.event.inputs.client_payload || '{}') }}  # Ensure it's valid JSON
+          installation_id: ${{ github.event.inputs.installation_id || '' }}
+          resolver_url: ${{ github.event.inputs.resolver_url || '' }}
+          resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN || '' }}
+
       - name: Debug gitStream output
         if: always()
         run: |
           echo "GitStream exit code: ${{ steps.rules-engine.outcome }}"
           echo "GitStream outputs: ${{ toJson(steps.rules-engine.outputs) }}"
-      
+
       - name: Report gitStream status
         if: always()
         uses: actions/github-script@v7
@@ -94,19 +95,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.6
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run ESLint
         run: npx eslint .
         continue-on-error: true
-      
+
       - name: Report ESLint status
         if: always()
         uses: actions/github-script@v7
