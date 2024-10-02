@@ -1,4 +1,9 @@
+# -*- mode: yaml -*-
+# This example configuration provides basic automations to get started with GitStream.
+# View the GitStream quickstart for more examples: https://docs.gitstream.cm/examples/
+
 name: gitStream and ESLint Checks
+
 permissions:
   contents: read
   statuses: write
@@ -55,7 +60,7 @@ jobs:
         run: npm ci
       
       - name: Evaluate Rules
-        uses: linear-b/gitstream-github-action@v2-alpha
+        uses: linear-b/gitstream-github-action@v2.0.43  # Ensure the correct version is specified
         id: rules-engine
         with:
          full_repository: ${{ github.event.inputs.full_repository }}
