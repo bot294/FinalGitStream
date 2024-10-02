@@ -1,4 +1,7 @@
 # -*- mode: yaml -*-
+# This example configuration provides basic automations to get started with GitStream.
+# View the GitStream quickstart for more examples: https://docs.gitstream.cm/examples/
+
 manifest:
   version: 1.0
 
