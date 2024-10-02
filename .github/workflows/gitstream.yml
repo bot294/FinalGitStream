@@ -36,8 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     name: gitStream workflow automation
     permissions:
-      contents: read
-      statuses: write
+     contents: read
+     statuses: write
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -51,28 +51,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Check for gitstream.cm
-        run: |
-          if [ ! -f "./gitstream.cm" ]; then
-            echo "gitstream.cm file not found"
-            exit 1
-          else
-            echo "gitstream.cm file exists"
-          fi
-
       - name: Evaluate GitStream Rules
         uses: linear-b/gitstream-github-action@v2
         id: rules-engine
         continue-on-error: true
         with:
-          full_repository: ${{ github.repository }}
-          head_ref: ${{ github.head_ref }}
-          base_ref: ${{ github.base_ref }}
+          full_repository: ${{ github.event.inputs.full_repository || github.repository }}
+          head_ref: ${{ github.event.inputs.head_ref || github.head_ref }}
+          base_ref: ${{ github.event.inputs.base_ref || github.base_ref }}
           client_payload: |
             ${{ toJson(github.event.inputs.client_payload || '{}') }}  # Properly formatted JSON payload
+          installation_id: ${{ github.event.inputs.installation_id }}
           resolver_url: ${{ github.event.inputs.resolver_url }}
           resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}
-
+          
       - name: Debug gitStream output
         if: always()
         run: |
