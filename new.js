@@ -15,11 +15,7 @@ function factorial(n) {
     }
     return result;
 }
-function new_fun()
-{
-    console.log("Hey, I am a new function");
-}
-new_fun();
+
 // Example usage
 try {
     console.log(factorial(5)); // Output: 120
