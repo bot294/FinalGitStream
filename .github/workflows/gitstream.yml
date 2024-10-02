@@ -58,7 +58,6 @@ jobs:
       - name: Evaluate GitStream Rules
         uses: linear-b/gitstream-github-action@v2
         id: rules-engine
-        continue-on-error: true
         with:
           full_repository: ${{ github.event.inputs.full_repository || github.repository }}
           head_ref: ${{ github.event.inputs.head_ref || github.head_ref }}
