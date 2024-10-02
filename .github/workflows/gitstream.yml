@@ -42,7 +42,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+        with:
+          ref: ${{ github.ref }}
+          repository: ${{ github.repository }}
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -60,17 +63,17 @@ jobs:
           head_ref: ${{ github.event.inputs.head_ref || github.head_ref }}
           base_ref: ${{ github.event.inputs.base_ref || github.base_ref }}
           client_payload: |
-            ${{ toJson(github.event.inputs.client_payload || '{}') }}  # Properly formatted JSON payload
+            ${{ toJson(github.event.inputs.client_payload || '{}') }}
           installation_id: ${{ github.event.inputs.installation_id }}
           resolver_url: ${{ github.event.inputs.resolver_url }}
           resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}
-          
+      
       - name: Debug gitStream output
         if: always()
         run: |
           echo "GitStream exit code: ${{ steps.rules-engine.outcome }}"
           echo "GitStream outputs: ${{ toJson(steps.rules-engine.outputs) }}"
-      
+
       - name: Report gitStream status
         if: always()
         uses: actions/github-script@v7
