@@ -15,6 +15,6 @@ function clear_all_tasks(num) {
 
 // Function to save tasks to localStorage
 
-clear_all_tasks(3);
+clear_all_tasks(0);
 // Display tasks on page load
 
