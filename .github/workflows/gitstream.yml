@@ -53,10 +53,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Add a safe check for empty values
+      # Use GitHub context values if inputs are empty
       - name: Validate GitStream Inputs
         run: |
-          if [ -z "${{ github.event.inputs.full_repository }}" ] || [ -z "${{ github.event.inputs.head_ref }}" ] || [ -z "${{ github.event.inputs.base_ref }}" ]; then
+          FULL_REPO="${{ github.event.inputs.full_repository || github.repository }}"
+          HEAD_REF="${{ github.event.inputs.head_ref || github.head_ref }}"
+          BASE_REF="${{ github.event.inputs.base_ref || github.base_ref }}"
+
+          if [ -z "$FULL_REPO" ] || [ -z "$HEAD_REF" ] || [ -z "$BASE_REF" ]; then
             echo "Missing required inputs!"
             exit 1
           fi
