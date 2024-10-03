@@ -32,9 +32,9 @@ on:
         default: ""
 
 jobs:
-  gitStream:
+  combined-check:
     runs-on: ubuntu-latest
-    name: gitStream workflow automation
+    name: Combined GitStream and ESLint Checks
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,11 +46,7 @@ jobs:
         with:
           node-version: '20.x'
       
-      - name: Install dependencies
-        run: npm ci
-
-      # Validate required inputs
-      - name: Validate GitStream Inputs
+      - name: Run GitStream and ESLint Checks
         run: |
           echo "Checking required inputs..."
           REPO="${{ github.event.inputs.full_repository }}"
@@ -61,82 +57,27 @@ jobs:
             echo "Missing required inputs!"
             exit 1
           fi
-      
-      - name: Evaluate GitStream Rules
-        uses: linear-b/gitstream-github-action@v2
-        id: rules-engine
-        continue-on-error: true
-        with:
-          full_repository: ${{ github.event.inputs.full_repository || github.repository }}
-          head_ref: ${{ github.event.inputs.head_ref || github.head_ref }}
-          base_ref: ${{ github.event.inputs.base_ref || github.base_ref }}
-          client_payload: ${{ github.event.inputs.client_payload || '{}' }}  # Ensure valid JSON
-          installation_id: ${{ github.event.inputs.installation_id }}
-          resolver_url: ${{ github.event.inputs.resolver_url }}
-          resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}
 
-      - name: Debug gitStream output
-        if: always()
-        run: |
-          echo "GitStream exit code: ${{ steps.rules-engine.outcome }}"
-          echo "GitStream outputs: ${{ toJson(steps.rules-engine.outputs) }}"
+          echo "Installing dependencies..."
+          npm ci
 
-      - name: Report gitStream status
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              state: '${{ job.status }}',
-              context: 'gitStream workflow automation',
-              description: 'gitStream job completed with status: ${{ job.status }}'
-            })
-    
-      - name: Handle Git Errors
-        if: failure()
-        run: |
-          echo "Checking for Git errors..."
-          if git rev-parse HEAD; then
-            echo "Git repository is fine."
-          else
-            echo "Git repository error detected. Resetting repository..."
-            git fetch --all
-            git reset --hard origin/${{ github.event.inputs.base_ref || 'main' }}
+          echo "Evaluating GitStream Rules..."
+          OUTPUT=$(npx linear-b/gitstream-github-action@v2 --full-repository $REPO --head-ref $HEAD_REF --base-ref $BASE_REF --client-payload '${{ github.event.inputs.client_payload || '{}' }}' --installation-id '${{ github.event.inputs.installation_id }}' --resolver-url '${{ github.event.inputs.resolver_url }}' --resolver-token '${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}')
 
-  lint:
-    runs-on: ubuntu-latest
-    name: ESLint Check
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run ESLint
-        run: npx eslint .
-        continue-on-error: true
-      
-      - name: Report ESLint status
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              state: '${{ job.status }}',
-              context: 'ESLint Check',
-              description: 'ESLint job completed with status: ${{ job.status }}'
-            })
+          echo "GitStream Output: $OUTPUT"
+
+          echo "Running ESLint..."
+          npx eslint . || true
+
+          # Reporting statuses
+          echo "Reporting statuses..."
+          github_token="${{ secrets.GITHUB_TOKEN }}"
+          curl -X POST -H "Authorization: token $github_token" \
+            -d '{
+              "state": "'"${{ job.status }}"'",
+              "context": "Combined GitStream and ESLint Checks",
+              "description": "Combined job completed with status: '"${{ job.status }}"'"
+            }' \
+            "https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}"
+
+          echo "Finished checks."
