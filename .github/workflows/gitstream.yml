@@ -62,7 +62,15 @@ jobs:
           npm ci
 
           echo "Evaluating GitStream Rules..."
-          OUTPUT=$(npx linear-b/gitstream-github-action@v2 --full-repository $REPO --head-ref $HEAD_REF --base-ref $BASE_REF --client-payload '${{ github.event.inputs.client_payload || '{}' }}' --installation-id '${{ github.event.inputs.installation_id }}' --resolver-url '${{ github.event.inputs.resolver_url }}' --resolver-token '${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}')
+          OUTPUT=$(npx linear-b/gitstream-github-action@v2 \
+            --full-repository $REPO \
+            --head-ref $HEAD_REF \
+            --base-ref $BASE_REF \
+            --client-payload '${{ github.event.inputs.client_payload || '{}' }}' \
+            --installation-id '${{ github.event.inputs.installation_id }}' \
+            --resolver-url '${{ github.event.inputs.resolver_url }}' \
+            --resolver-token '${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}' \
+            --rules path/to/your/gitstream.cm)  # Specify the path to your gitstream.cm rules file
 
           echo "GitStream Output: $OUTPUT"
 
