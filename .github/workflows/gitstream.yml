@@ -53,12 +53,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Add a safe check for empty values using YAML conditionals
-      - name: Validate GitStream Inputs
-        if: ${{ github.event.inputs.full_repository == '' || github.event.inputs.head_ref == '' || github.event.inputs.base_ref == '' }}
+      # Output Inputs for Debugging
+      - name: Output Inputs
         run: |
-          echo "Missing required inputs!"
-          exit 1
+          echo "Full Repository: '${{ github.event.inputs.full_repository }}'"
+          echo "Head Ref: '${{ github.event.inputs.head_ref }}'"
+          echo "Base Ref: '${{ github.event.inputs.base_ref }}'"
+          echo "Client Payload: '${{ github.event.inputs.client_payload }}'"
+          echo "Installation ID: '${{ github.event.inputs.installation_id }}'"
+          echo "Resolver URL: '${{ github.event.inputs.resolver_url }}'"
+          echo "Resolver Token: '${{ github.event.inputs.resolver_token }}'"
+
+      # Validate GitStream Inputs
+      - name: Validate GitStream Inputs
+        run: |
+          if [ -z "${{ github.event.inputs.full_repository }}" ] || [ -z "${{ github.event.inputs.head_ref }}" ] || [ -z "${{ github.event.inputs.base_ref }}" ]; then
+            echo "Missing required inputs!"
+            exit 1
+          fi
       
       - name: Evaluate GitStream Rules
         uses: linear-b/gitstream-github-action@v2
@@ -121,8 +133,7 @@ jobs:
         run: npm ci
       
       - name: Run ESLint
-        run: npx eslint .
-        continue-on-error: true
+        run: npx eslint . || true  # Continue on error
       
       - name: Report ESLint status
         if: always()
