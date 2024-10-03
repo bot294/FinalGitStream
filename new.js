@@ -1,2 +1,6 @@
-let fruits = ["apple", "banana", "cherry"];
-console.log(fruits[1]); // banana
+async function get_data() {
+  let response = await fetch("https://api.example.com/data");
+  let data = await response.json();
+  console.log(data);
+}
+get_data();
