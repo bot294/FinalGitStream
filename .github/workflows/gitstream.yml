@@ -35,10 +35,6 @@ jobs:
   gitStream:
     runs-on: ubuntu-latest
     name: gitStream workflow automation
-    permissions:
-      contents: read
-      statuses: write
-    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -53,21 +49,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Output Inputs for Debugging
-      - name: Output Inputs
-        run: |
-          echo "Full Repository: '${{ github.event.inputs.full_repository }}'"
-          echo "Head Ref: '${{ github.event.inputs.head_ref }}'"
-          echo "Base Ref: '${{ github.event.inputs.base_ref }}'"
-          echo "Client Payload: '${{ github.event.inputs.client_payload }}'"
-          echo "Installation ID: '${{ github.event.inputs.installation_id }}'"
-          echo "Resolver URL: '${{ github.event.inputs.resolver_url }}'"
-          echo "Resolver Token: '${{ github.event.inputs.resolver_token }}'"
-
-      # Validate GitStream Inputs
+      # Add a safe check for empty values
       - name: Validate GitStream Inputs
         run: |
-          if [ -z "${{ github.event.inputs.full_repository }}" ] || [ -z "${{ github.event.inputs.head_ref }}" ] || [ -z "${{ github.event.inputs.base_ref }}" ]; then
+          echo "Checking required inputs..."
+          REPO="${{ github.event.inputs.full_repository }}"
+          HEAD_REF="${{ github.event.inputs.head_ref }}"
+          BASE_REF="${{ github.event.inputs.base_ref }}"
+          
+          if [ -z "$REPO" ] || [ -z "$HEAD_REF" ] || [ -z "$BASE_REF" ]; then
             echo "Missing required inputs!"
             exit 1
           fi
@@ -133,7 +123,8 @@ jobs:
         run: npm ci
       
       - name: Run ESLint
-        run: npx eslint . || true  # Continue on error
+        run: npx eslint .
+        continue-on-error: true
       
       - name: Report ESLint status
         if: always()
