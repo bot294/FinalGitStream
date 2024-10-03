@@ -54,17 +54,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      # - name: Evaluate Rules
-      #   uses: linear-b/gitstream-github-action@v2-alpha
-      #   id: rules-engine
-      #   with:
-      #     full_repository: ${{ github.event.inputs.full_repository }}
-      #     head_ref: ${{ github.event.inputs.head_ref }}
-      #     base_ref: ${{ github.event.inputs.base_ref }}
-      #     client_payload: ${{ github.event.inputs.client_payload }}
-      #     installation_id: ${{ github.event.inputs.installation_id }}
-      #     resolver_url: ${{ github.event.inputs.resolver_url }}
-      #     resolver_token: ${{ github.event.inputs.resolver_token }}
+      - name: Evaluate Rules
+        uses: linear-b/gitstream-github-action@v2-alpha
+        id: rules-engine
+        with:
+          full_repository: ${{ github.event.inputs.full_repository }}
+          head_ref: ${{ github.event.inputs.head_ref }}
+          base_ref: ${{ github.event.inputs.base_ref }}
+          client_payload: ${{ github.event.inputs.client_payload }}
+          installation_id: ${{ github.event.inputs.installation_id }}
+          resolver_url: ${{ github.event.inputs.resolver_url }}
+          resolver_token: ${{ github.event.inputs.resolver_token }}
     
       - name: Debug gitStream output
         if: always()
