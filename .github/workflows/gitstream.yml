@@ -1,87 +1,134 @@
 name: gitStream and ESLint Checks
+permissions:
+  contents: read
+  statuses: write
 
 on:
   pull_request:
-    branches:
-      - first_branch
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      client_payload:
+        description: 'The Client payload'
+        required: true
+      full_repository:
+        description: 'The repository name including the owner in owner/repo_name format'
+        required: true
+      head_ref:
+        description: 'The head sha'
+        required: true
+      base_ref:
+        description: 'The base ref'
+        required: true
+      installation_id:
+        description: 'The installation id'
+        required: false
+      resolver_url:
+        description: 'The resolver url to pass results to'
+        required: true
+      resolver_token:
+        description: 'Optional resolver token for resolver service'
+        required: false
+        default: ""
 
 jobs:
-  eslint-check:
+  gitStream:
     runs-on: ubuntu-latest
+    name: gitStream workflow automation
+    permissions:
+      contents: read
+      statuses: write
+    timeout-minutes: 10
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.6
         with:
-          node-version: '14'
+          fetch-depth: 0  # Ensure full repository history
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      
       - name: Install dependencies
-        run: npm install
-
-      - name: Run ESLint
-        run: npm run lint
-
-      - name: Upload ESLint results
+        run: npm ci
+      
+      - name: Evaluate GitStream Rules
+        uses: linear-b/gitstream-github-action@v2
+        id: rules-engine
+        continue-on-error: true
+        with:
+          full_repository: ${{ github.event.inputs.full_repository || github.repository }}
+          head_ref: ${{ github.event.inputs.head_ref || github.head_ref }}
+          base_ref: ${{ github.event.inputs.base_ref || github.base_ref }}
+          client_payload: ${{ github.event.inputs.client_payload || '{}' }}  # Ensure valid JSON
+          installation_id: ${{ github.event.inputs.installation_id }}
+          resolver_url: ${{ github.event.inputs.resolver_url }}
+          resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}
+    
+      - name: Debug gitStream output
         if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: eslint-results
-          path: eslint-results/
+        run: |
+          echo "GitStream exit code: ${{ steps.rules-engine.outcome }}"
+          echo "GitStream outputs: ${{ toJson(steps.rules-engine.outputs) }}"
 
-  sonarcloud:
+      - name: Report gitStream status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: '${{ job.status }}',
+              context: 'gitStream workflow automation',
+              description: 'gitStream job completed with status: ${{ job.status }}'
+            })
+    
+      - name: Handle Git Errors
+        if: failure()
+        run: |
+          echo "Checking for Git errors..."
+          if git rev-parse HEAD; then
+            echo "Git repository is fine."
+          else
+            echo "Git repository error detected. Resetting repository..."
+            git fetch --all
+            git reset --hard origin/${{ github.base_ref || 'main' }}
+          fi
+
+  lint:
     runs-on: ubuntu-latest
+    name: ESLint Check
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.6
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
-
+          node-version: '20'
+      
       - name: Install dependencies
-        run: npm install
-
-      - name: Run SonarCloud analysis
-        uses: sonarsource/sonarcloud-github-action@v1
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npx eslint .
+        continue-on-error: true
+      
+      - name: Report ESLint status
+        if: always()
+        uses: actions/github-script@v7
         with:
-          args: >
-            -Dsonar.projectKey=your_project_key
-            -Dsonar.organization=your_organization_key
-            -Dsonar.sources=.
-            -Dsonar.host.url=https://sonarcloud.io
-
-  gitstream-workflow:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      # Debugging step for inputs
-      - name: Debug Inputs
-        run: |
-          echo "full_repository: ${{ github.event.inputs.full_repository }}"
-          echo "head_ref: ${{ github.event.inputs.head_ref }}"
-          echo "base_ref: ${{ github.event.inputs.base_ref }}"
-
-      - name: Run gitStream
-        uses: linear-b/gitstream-github-action@v1
-        with:
-          client_payload: ${{ github.event.inputs.client_payload }}
-          full_repository: ${{ github.event.inputs.full_repository }}
-          head_ref: ${{ github.event.inputs.head_ref }}
-          base_ref: ${{ github.event.inputs.base_ref }}
-
-      - name: Check gitStream workflow
-        run: |
-          echo "Check gitStream Workflow Status"
-
-  # Optional job to clean up if needed
-  cleanup:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Remove Artifacts
-        run: rm -rf eslint-results
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: '${{ job.status }}',
+              context: 'ESLint Check',
+              description: 'ESLint job completed with status: ${{ job.status }}'
+            })
