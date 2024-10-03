@@ -51,7 +51,15 @@ automations:
       - action: explain-code-experts@v1 
         args:
           gt: 10 
-
+  auto_merge:
+    if:
+      - {{ is.approved }}
+      - {{ is.green }}
+    run:
+      - action: merge@v1
+        args:
+          wait_for_all_checks: true
+          rebase_on_merge: true
 # +----------------------------------------------------------------------------+
 # | Custom Expressions                                                           |
 # | https://docs.gitstream.cm/how-it-works/#custom-expressions                  |
