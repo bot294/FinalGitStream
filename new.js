@@ -2,6 +2,7 @@
 
 // Function to clear all tasks
 function clear_all_tasks() {
+    console.log("clear all tasks function");
 
 }
 
