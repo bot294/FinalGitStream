@@ -1,7 +1,7 @@
 
 
 // Function to clear all tasks
-function clear_all_Tasks(num) {
+function clear_all_tasks(num) {
     console.log("clear all tasks function");
     if(num>0)
     {
@@ -15,6 +15,6 @@ function clear_all_Tasks(num) {
 
 // Function to save tasks to localStorage
 
-clear_all_Tasks(0);
+clear_all_tasks(0);
 // Display tasks on page load
 
