@@ -1,6 +1,6 @@
-async function get_data() {
+async function get_Data() {
   let response = await fetch("https://api.example.com/data");
   let data = await response.json();
   console.log(data);
 }
-get_data();
+get_Data();
