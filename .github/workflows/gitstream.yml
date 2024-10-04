@@ -1,6 +1,7 @@
 name: gitStream and ESLint Checks
 permissions:
   contents: read
+  pull-requests: write
   statuses: write
 
 on:
@@ -30,7 +31,6 @@ on:
         description: 'Optional resolver token for resolver service'
         required: false
         default: ""
-
 jobs:
   gitStream:
     runs-on: ubuntu-latest
@@ -136,7 +136,7 @@ jobs:
             git reset --hard origin/${{ github.base_ref || 'main' }}
 
 
-  lint:
+   lint:
     runs-on: ubuntu-latest
     name: ESLint Check
     steps:
@@ -154,19 +154,14 @@ jobs:
       - name: Run ESLint
         id: eslint
         run: |
-          npx eslint . --format=json --output-file eslint_report.json || true
-          if [ -f eslint_report.json ]; then
-            ERROR_COUNT=$(jq 'length' eslint_report.json)
-            if [ "$ERROR_COUNT" -gt 0 ]; then
-              echo "eslint_status=failure" >> $GITHUB_OUTPUT
-              echo "eslint_message=ESLint found $ERROR_COUNT issue(s)" >> $GITHUB_OUTPUT
-            else
-              echo "eslint_status=success" >> $GITHUB_OUTPUT
-              echo "eslint_message=ESLint check passed" >> $GITHUB_OUTPUT
-            fi
+          npx eslint . --format=stylish || true
+          ESLINT_EXIT_CODE=$?
+          if [ $ESLINT_EXIT_CODE -eq 0 ]; then
+            echo "eslint_status=success" >> $GITHUB_OUTPUT
+            echo "eslint_message=ESLint check passed" >> $GITHUB_OUTPUT
           else
-            echo "eslint_status=error" >> $GITHUB_OUTPUT
-            echo "eslint_message=ESLint check failed to run" >> $GITHUB_OUTPUT
+            echo "eslint_status=failure" >> $GITHUB_OUTPUT
+            echo "eslint_message=ESLint found issues" >> $GITHUB_OUTPUT
           fi
       
       - name: Report ESLint status
@@ -175,7 +170,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const fs = require('fs');
             const status = '${{ steps.eslint.outputs.eslint_status }}';
             const description = '${{ steps.eslint.outputs.eslint_message }}';
             
@@ -188,17 +182,12 @@ jobs:
               description: description
             });
             
-            if (status === 'failure' && fs.existsSync('eslint_report.json')) {
-              const eslintReport = JSON.parse(fs.readFileSync('eslint_report.json', 'utf8'));
-              let body = '## ESLint Issues\n\n';
-              eslintReport.forEach(issue => {
-                body += `- **${issue.filePath}** (line ${issue.line}, col ${issue.column}): ${issue.message} (${issue.ruleId})\n`;
-              });
-              
+            if (status === 'failure') {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: body
+                body: 'ESLint check failed. Please review the workflow logs for details.'
               });
+            }
             }
