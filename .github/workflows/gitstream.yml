@@ -37,6 +37,9 @@ jobs:
   gitStream:
     runs-on: ubuntu-latest
     name: gitStream workflow automation
+    permissions:
+      contents: read
+      statuses: write
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -114,14 +117,14 @@ jobs:
               ? 'GitStream encountered known errors but workflow continued'
               : 'GitStream job completed with status: ${{ job.status }}';
             
-            await github.rest.repos.createCommitStatus({
+            github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
               state: status,
               context: 'gitStream workflow automation',
               description: description
-            });
+            })
 
       - name: Handle Git Errors
         if: failure()
