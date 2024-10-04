@@ -53,13 +53,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Add a safe check for empty values
-      - name: Validate GitStream Inputs
-        run: |
-          if [ -z "${{ github.event.inputs.full_repository }}" ] || [ -z "${{ github.event.inputs.head_ref }}" ] || [ -z "${{ github.event.inputs.base_ref }}" ]; then
-            echo "Missing required inputs!"
-            exit 1
-          fi
       
       - name: Evaluate GitStream Rules
         uses: linear-b/gitstream-github-action@v2
