@@ -135,7 +135,6 @@ jobs:
             git fetch --all
             git reset --hard origin/${{ github.base_ref || 'main' }}
 
-  # ... (rest of the workflow remains the same)
   lint:
     runs-on: ubuntu-latest
     name: ESLint Check
@@ -152,8 +151,22 @@ jobs:
         run: npm ci
       
       - name: Run ESLint
-        run: npx eslint .
-        continue-on-error: true
+        id: eslint
+        run: |
+          npx eslint . --format=json --output-file eslint_report.json || true
+          if [ -f eslint_report.json ]; then
+            ERROR_COUNT=$(jq '.length' eslint_report.json)
+            if [ "$ERROR_COUNT" -gt 0 ]; then
+              echo "eslint_status=failure" >> $GITHUB_OUTPUT
+              echo "eslint_message=ESLint found $ERROR_COUNT issue(s)" >> $GITHUB_OUTPUT
+            else
+              echo "eslint_status=success" >> $GITHUB_OUTPUT
+              echo "eslint_message=ESLint check passed" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "eslint_status=error" >> $GITHUB_OUTPUT
+            echo "eslint_message=ESLint check failed to run" >> $GITHUB_OUTPUT
+          fi
       
       - name: Report ESLint status
         if: always()
@@ -161,11 +174,31 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const fs = require('fs');
+            let status = '${{ steps.eslint.outputs.eslint_status }}';
+            let description = '${{ steps.eslint.outputs.eslint_message }}';
+            
             github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
-              state: '${{ job.status }}',
+              state: status,
               context: 'ESLint Check',
-              description: 'ESLint job completed with status: ${{ job.status }}'
+              description: description
+            });
+            
+            if (status === 'failure' && fs.existsSync('eslint_report.json')) {
+              const eslintReport = JSON.parse(fs.readFileSync('eslint_report.json', 'utf8'));
+              let body = '## ESLint Issues\n\n';
+              eslintReport.forEach(issue => {
+                body += `- **${issue.filePath}** (line ${issue.line}, col ${issue.column}): ${issue.message} (${issue.ruleId})\n`;
+              });
+              
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }tus: ${{ job.status }}'
             })
