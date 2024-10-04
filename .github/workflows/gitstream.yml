@@ -78,8 +78,8 @@ jobs:
         id: rules-engine
         continue-on-error: true
         run: |
-          output=$(linear-b/gitstream-github-action@v2 \
-            --full_repository "${{ steps.set-inputs.outputs.full_repository }}" \
+         output=$(linear-b/gitstream-github-action@v2 \
+            --full_repository "${{ steps.set-inputs.outputs.full_repository}}" \
             --head_ref "${{ steps.set-inputs.outputs.head_ref }}" \
             --base_ref "${{ steps.set-inputs.outputs.base_ref }}" \
             --client_payload '${{ steps.set-inputs.outputs.client_payload }}' \
@@ -87,6 +87,7 @@ jobs:
             --resolver_url "${{ github.event.inputs.resolver_url }}" \
             --resolver_token "${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}" \
           ) || true
+
           
           echo "GitStream output: $output"
           
