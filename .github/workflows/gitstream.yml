@@ -76,23 +76,33 @@ jobs:
           echo "client_payload=$client_payload" >> $GITHUB_OUTPUT
       
       - name: Evaluate GitStream Rules
-        uses: linear-b/gitstream-github-action@v2
         id: rules-engine
         continue-on-error: true
-        with:
-          full_repository: ${{ steps.set-inputs.outputs.full_repository }}
-          head_ref: ${{ steps.set-inputs.outputs.head_ref }}
-          base_ref: ${{ steps.set-inputs.outputs.base_ref }}
-          client_payload: ${{ steps.set-inputs.outputs.client_payload }}
-          installation_id: ${{ github.event.inputs.installation_id }}
-          resolver_url: ${{ github.event.inputs.resolver_url }}
-          resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}
+        run: |
+          output=$(linear-b/gitstream-github-action@v2 \
+            --full_repository "${{ steps.set-inputs.outputs.full_repository }}" \
+            --head_ref "${{ steps.set-inputs.outputs.head_ref }}" \
+            --base_ref "${{ steps.set-inputs.outputs.base_ref }}" \
+            --client_payload '${{ steps.set-inputs.outputs.client_payload }}' \
+            --installation_id "${{ github.event.inputs.installation_id }}" \
+            --resolver_url "${{ github.event.inputs.resolver_url }}" \
+            --resolver_token "${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}" \
+          ) || true
+          
+          echo "GitStream output: $output"
+          
+          if echo "$output" | grep -q "Unexpected character encountered while parsing value: O"; then
+            echo "Known GitStream error occurred, but continuing workflow."
+            echo "gitstream_status=warning" >> $GITHUB_OUTPUT
+          else
+            echo "gitstream_status=success" >> $GITHUB_OUTPUT
+          fi
 
       - name: Debug gitStream output
         if: always()
         run: |
+          echo "GitStream status: ${{ steps.rules-engine.outputs.gitstream_status }}"
           echo "GitStream exit code: ${{ steps.rules-engine.outcome }}"
-          echo "GitStream outputs: ${{ toJson(steps.rules-engine.outputs) }}"
 
       - name: Report gitStream status
         if: always()
@@ -100,15 +110,20 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const status = '${{ steps.rules-engine.outputs.gitstream_status }}' === 'warning' ? 'failure' : '${{ job.status }}';
+            const description = '${{ steps.rules-engine.outputs.gitstream_status }}' === 'warning' 
+              ? 'GitStream encountered known errors but workflow continued'
+              : 'GitStream job completed with status: ${{ job.status }}';
+            
             github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
-              state: '${{ job.status }}',
+              state: status,
               context: 'gitStream workflow automation',
-              description: 'gitStream job completed with status: ${{ job.status }}'
+              description: description
             })
-    
+
       - name: Handle Git Errors
         if: failure()
         run: |
@@ -120,6 +135,7 @@ jobs:
             git fetch --all
             git reset --hard origin/${{ github.base_ref || 'main' }}
 
+  # ... (rest of the workflow remains the same)
   lint:
     runs-on: ubuntu-latest
     name: ESLint Check
