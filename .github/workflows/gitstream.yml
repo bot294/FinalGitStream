@@ -1,3 +1,4 @@
+
 name: gitStream and ESLint Checks
 
 permissions:
@@ -37,9 +38,6 @@ jobs:
   gitStream:
     runs-on: ubuntu-latest
     name: gitStream workflow automation
-    permissions:
-      contents: read
-      statuses: write
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -99,13 +97,11 @@ jobs:
           else
             echo "gitstream_status=success" >> $GITHUB_OUTPUT
           fi
-
       - name: Debug gitStream output
         if: always()
         run: |
           echo "GitStream status: ${{ steps.rules-engine.outputs.gitstream_status }}"
           echo "GitStream exit code: ${{ steps.rules-engine.outcome }}"
-
       - name: Report gitStream status
         if: always()
         uses: actions/github-script@v7
@@ -117,15 +113,14 @@ jobs:
               ? 'GitStream encountered known errors but workflow continued'
               : 'GitStream job completed with status: ${{ job.status }}';
             
-            github.rest.repos.createCommitStatus({
+            await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
               state: status,
               context: 'gitStream workflow automation',
               description: description
-            })
-
+            });
       - name: Handle Git Errors
         if: failure()
         run: |
@@ -136,7 +131,6 @@ jobs:
             echo "Git repository error detected. Resetting repository..."
             git fetch --all
             git reset --hard origin/${{ github.base_ref || 'main' }}
-
   lint:
     runs-on: ubuntu-latest
     name: ESLint Check
