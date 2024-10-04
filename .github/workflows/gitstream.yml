@@ -53,11 +53,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate GitStream Inputs
+      - name: Validate and Set GitStream Inputs
+        id: set-inputs
         run: |
           full_repo="${{ github.event.inputs.full_repository || github.repository }}"
           head_ref="${{ github.event.inputs.head_ref || github.head_ref }}"
           base_ref="${{ github.event.inputs.base_ref || github.base_ref }}"
+          client_payload='${{ github.event.inputs.client_payload || '{}' }}'
           
           if [ -z "$full_repo" ] || [ -z "$head_ref" ] || [ -z "$base_ref" ]; then
             echo "Missing required inputs!"
@@ -68,20 +70,23 @@ jobs:
           fi
           
           echo "All required inputs are present."
+          echo "full_repository=$full_repo" >> $GITHUB_OUTPUT
+          echo "head_ref=$head_ref" >> $GITHUB_OUTPUT
+          echo "base_ref=$base_ref" >> $GITHUB_OUTPUT
+          echo "client_payload=$client_payload" >> $GITHUB_OUTPUT
       
       - name: Evaluate GitStream Rules
         uses: linear-b/gitstream-github-action@v2
         id: rules-engine
         continue-on-error: true
         with:
-          full_repository: ${{ github.event.inputs.full_repository || github.repository }}
-          head_ref: ${{ github.event.inputs.head_ref || github.head_ref }}
-          base_ref: ${{ github.event.inputs.base_ref || github.base_ref }}
-          client_payload: ${{ github.event.inputs.client_payload || '{}' }}  # Ensure valid JSON
+          full_repository: ${{ steps.set-inputs.outputs.full_repository }}
+          head_ref: ${{ steps.set-inputs.outputs.head_ref }}
+          base_ref: ${{ steps.set-inputs.outputs.base_ref }}
+          client_payload: ${{ steps.set-inputs.outputs.client_payload }}
           installation_id: ${{ github.event.inputs.installation_id }}
           resolver_url: ${{ github.event.inputs.resolver_url }}
           resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}
-
 
       - name: Debug gitStream output
         if: always()
