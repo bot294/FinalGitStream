@@ -1,2 +1,2 @@
-const new_one = () => console.log("Arrow function");
-new_one();
+const new_One = () => console.log("Arrow function");
+new_One();
