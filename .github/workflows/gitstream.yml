@@ -135,6 +135,7 @@ jobs:
             git fetch --all
             git reset --hard origin/${{ github.base_ref || 'main' }}
 
+
   lint:
     runs-on: ubuntu-latest
     name: ESLint Check
@@ -155,7 +156,7 @@ jobs:
         run: |
           npx eslint . --format=json --output-file eslint_report.json || true
           if [ -f eslint_report.json ]; then
-            ERROR_COUNT=$(jq '.length' eslint_report.json)
+            ERROR_COUNT=$(jq 'length' eslint_report.json)
             if [ "$ERROR_COUNT" -gt 0 ]; then
               echo "eslint_status=failure" >> $GITHUB_OUTPUT
               echo "eslint_message=ESLint found $ERROR_COUNT issue(s)" >> $GITHUB_OUTPUT
@@ -175,10 +176,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            let status = '${{ steps.eslint.outputs.eslint_status }}';
-            let description = '${{ steps.eslint.outputs.eslint_message }}';
+            const status = '${{ steps.eslint.outputs.eslint_status }}';
+            const description = '${{ steps.eslint.outputs.eslint_message }}';
             
-            github.rest.repos.createCommitStatus({
+            await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
@@ -194,11 +195,10 @@ jobs:
                 body += `- **${issue.filePath}** (line ${issue.line}, col ${issue.column}): ${issue.message} (${issue.ruleId})\n`;
               });
               
-              github.rest.issues.createComment({
+              await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
                 body: body
               });
-            }tus: ${{ job.status }}'
-            })
+            }
