@@ -1,6 +1,6 @@
-async function get_data() {
+async function get_Data() {
   let response = await fetch("#any link");
   let data = await response.json();
   console.log(data);
 }
-get_data();
+get_Data();
