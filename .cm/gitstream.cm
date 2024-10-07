@@ -1,13 +1,21 @@
 # -*- mode: yaml -*-
-# This configuration provides basic automations to get started with GitStream.
-# View the GitStream quickstart for more examples: https://docs.gitstream.cm/examples/
+# GitStream configuration for PR automations including ClickUp ticket checks.
 
 manifest:
   version: 1.0
 
 automations:
+  # 1. Add a label indicating estimated review time.
+  estimated_time_to_review:
+    if:
+      - true
+    run:
+      - action: add-label@v1
+        args:
+          label: "{{ calc.etr }} min review"
+          color: "{{ colors.red if (calc.etr >= 20) else (colors.yellow if (calc.etr >= 5) else colors.green) }}"
 
-  # Inform PR authors when they fail to reference ClickUp tickets in the PR title or description.
+  # 2. Add a label and comment if the PR is missing a ClickUp ticket reference in title or description.
   label_missing_clickup_info:
     if:
       - {{ not (has.clickup_ticket_in_title or has.clickup_ticket_in_desc) }}
@@ -21,8 +29,8 @@ automations:
           comment: |
             This PR is missing a ClickUp ticket reference in the title or description.
             Please add a ClickUp ticket reference to the title or description of this PR.
-
-  # Post a comment that lists the best experts for the files that were modified.
+  
+  # 3. Provide the list of best experts for modified files in the PR.
   explain_code_experts:
     if:
       - true
@@ -31,7 +39,7 @@ automations:
         args:
           gt: 10
 
-  # Triggered when someone applies a suggest-reviewer label to a PR.
+  # 4. Automatically assign reviewers when a specific label is applied.
   assign_code_experts:
     if:
       - "{{ pr.labels | match(term='suggest-reviewer') | some }}"
@@ -43,6 +51,7 @@ automations:
         args:
           gt: 10
 
+  # 5. Automatically merge the PR if it's approved and all checks passed.
   auto_merge:
     if:
       - "{{ is.approved }}"
@@ -56,4 +65,36 @@ automations:
             - Is approved: {{ is.approved }}
             - All checks passed: {{ is.all_checks_passed }}
             - Has required reviews: {{ has.required_reviews }}
+            - Review decision: {{ pr.reviewDecision }}
+            - Successful checks: {{ pr.checks.success }}
+            - Total checks: {{ pr.checks.total }}
+            - Approved reviews count: {{ pr.reviews | filter(attr='state', value='APPROVED') | length }}
       - action: merge@v1
+        args:
+          wait_for_all_checks: true
+          rebase_on_merge: true
+
+# Custom Calculations and Conditions
+
+calc:
+  # Calculate estimated time to review based on branch.
+  etr: "{{ branch | estimatedReviewTime }}"
+
+has:
+  # Check for ClickUp ticket references in the PR title or description using regex CU-[number].
+  clickup_ticket_in_title: {{ pr.title | includes(regex=r/CU-\d+/) }}
+  clickup_ticket_in_desc: {{ pr.description | includes(regex=r/CU-\d+/) }}
+  # Check if the PR has the required number of approved reviews.
+  required_reviews: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
+
+is:
+  # Determine if the PR is approved.
+  approved: "{{ pr.reviewDecision == 'APPROVED' or pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
+  # Check if all checks have passed.
+  all_checks_passed: "{{ pr.checks.success == pr.checks.total }}"
+
+# Define colors for labels based on conditions.
+colors:
+  red: 'b60205'
+  yellow: 'fbca04'
+  green: '0e8a16'
