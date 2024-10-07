@@ -74,35 +74,42 @@ jobs:
           echo "base_ref=$base_ref" >> $GITHUB_OUTPUT
           echo "client_payload=$client_payload" >> $GITHUB_OUTPUT
       
+      - name: Verify .cm file
+        run: |
+          if [ ! -f ".cm/gitstream.cm" ]; then
+            echo "gitstream.cm file is missing. Creating a basic configuration."
+            mkdir -p .cm
+            echo "manifest:
+              version: 1.0
+            automations:
+              example_automation:
+                if:
+                  - true
+                run:
+                  - action: add-label@v1
+                    args:
+                      label: 'example-label'" > .cm/gitstream.cm
+          fi
+      
       - name: Evaluate GitStream Rules
         id: rules-engine
-        continue-on-error: false
-        run: |
-         output=$(linear-b/gitstream-github-action@v2 \
-            --full_repository "${{ steps.set-inputs.outputs.full_repository}}" \
-            --head_ref "${{ steps.set-inputs.outputs.head_ref }}" \
-            --base_ref "${{ steps.set-inputs.outputs.base_ref }}" \
-            --client_payload '${{ steps.set-inputs.outputs.client_payload }}' \
-            --installation_id "${{ github.event.inputs.installation_id }}" \
-            --resolver_url "${{ github.event.inputs.resolver_url }}" \
-            --resolver_token "${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}" \
-          ) || true
-
-          
-          echo "GitStream output: $output"
-          
-          if echo "$output" | grep -q "Unexpected character encountered while parsing value: O"; then
-            echo "Known GitStream error occurred, but continuing workflow."
-            echo "gitstream_status=warning" >> $GITHUB_OUTPUT
-          else
-            echo "gitstream_status=success" >> $GITHUB_OUTPUT
-          fi
+        env:
+          ACTIONS_STEP_DEBUG: true
+        uses: linear-b/gitstream-github-action@v2
+        with:
+          full_repository: ${{ steps.set-inputs.outputs.full_repository}}
+          head_ref: ${{ steps.set-inputs.outputs.head_ref }}
+          base_ref: ${{ steps.set-inputs.outputs.base_ref }}
+          client_payload: ${{ steps.set-inputs.outputs.client_payload }}
+          installation_id: ${{ github.event.inputs.installation_id }}
+          resolver_url: ${{ github.event.inputs.resolver_url }}
+          resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}
       
       - name: Debug gitStream output
         if: always()
         run: |
-          echo "GitStream status: ${{ steps.rules-engine.outputs.gitstream_status }}"
-          echo "GitStream exit code: ${{ steps.rules-engine.outcome }}"
+          echo "GitStream status: ${{ steps.rules-engine.outcome }}"
+          echo "GitStream output: ${{ steps.rules-engine.outputs.result }}"
       
       - name: Report gitStream status
         if: always()
@@ -110,19 +117,28 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const status = '${{ steps.rules-engine.outputs.gitstream_status }}' === 'warning' ? 'failure' : '${{ job.status }}';
-            const description = '${{ steps.rules-engine.outputs.gitstream_status }}' === 'warning' 
-              ? 'GitStream encountered known errors but workflow continued'
-              : 'GitStream job completed with status: ${{ job.status }}';
+            const status = '${{ steps.rules-engine.outcome }}' === 'failure' ? 'failure' : 'success';
+            const description = status === 'failure' 
+              ? 'GitStream encountered errors'
+              : 'GitStream job completed successfully';
             
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
               state: status,
-              context: 'gitStream workflow automation',
+              context: 'GitStream Check',
               description: description
             });
+            
+            if (status === 'failure') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: 'GitStream check failed. Please review the workflow logs for details.'
+              });
+            }
       
       - name: Handle Git Errors
         if: failure()
