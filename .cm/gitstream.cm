@@ -51,19 +51,21 @@ automations:
       - action: explain-code-experts@v1 
         args:
           gt: 10 
+
+  # Auto-merge rule
   auto_merge:
     if:
       - {{ is.approved }}
-      - {{ is.green }}
+      - {{ is.all_checks_passed }}
+      - {{ is.all_workflows_passed }}
+      - {{ has.required_reviews }}
     run:
       - action: merge@v1
         args:
           wait_for_all_checks: true
           rebase_on_merge: true
-# +----------------------------------------------------------------------------+
-# | Custom Expressions                                                           |
-# | https://docs.gitstream.cm/how-it-works/#custom-expressions                  |
-# +----------------------------------------------------------------------------+
+
+# Custom Expressions
 
 calc:
   etr: {{ branch | estimatedReviewTime }}
@@ -71,6 +73,12 @@ calc:
 has:
   jira_ticket_in_title: {{ pr.title | includes(regex=r/\b[A-Za-z]+-\d+\b/) }}
   jira_ticket_in_desc: {{ pr.description | includes(regex=r/atlassian.net\/browse\/\w{1,}-\d{3,4}/) }}
+  required_reviews: {{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}
+
+is:
+  approved: {{ pr.reviewDecision == 'APPROVED' }}
+  all_checks_passed: {{ pr.checks.success == pr.checks.total }}
+  all_workflows_passed: {{ pr.statusesPerCheck | filter(attr='conclusion', value='SUCCESS') | length == pr.statusesPerCheck | length }}
 
 colors:
   red: 'b60205'
