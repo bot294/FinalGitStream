@@ -18,12 +18,12 @@ automations:
   # 2. Add a label and comment if the PR is missing a ClickUp ticket reference in title or description.
   label_missing_clickup_info:
     if:
-      - {{ not (has.clickup_ticket_in_title or has.clickup_ticket_in_desc) }}
+      - "{{ not (has.clickup_ticket_in_title or has.clickup_ticket_in_desc) }}"
     run:
       - action: add-label@v1
         args:
           label: "missing-clickup"
-          color: {{ colors.red }}
+          color: "{{ colors.red }}"
       - action: add-comment@v1
         args:
           comment: |
@@ -53,26 +53,26 @@ automations:
 
   # 5. Automatically merge the PR if it's approved and all checks passed.
   auto_merge:
-  if:
-    - "{{ is.approved }}"
-    - "{{ is.all_checks_passed }}"
-    - "{{ has.required_reviews }}"
-  run:
-    - action: add-comment@v1
-      args:
-        comment: |
-          Debugging auto-merge conditions:
-          - Is approved: {{ is.approved }}
-          - All checks passed: {{ is.all_checks_passed }}
-          - Has required reviews: {{ has.required_reviews }}
-          - Review decision: {{ pr.reviewDecision }}
-          - Successful checks: {{ pr.checks.success }}
-          - Total checks: {{ pr.checks.total }}
-          - Approved reviews count: {{ pr.reviews | filter(attr='state', value='APPROVED') | length }}
-    - action: merge@v1
-      args:
-        wait_for_all_checks: true
-        rebase_on_merge: true
+    if:
+      - "{{ is.approved }}"
+      - "{{ is.all_checks_passed }}"
+      - "{{ has.required_reviews }}"
+    run:
+      - action: add-comment@v1
+        args:
+          comment: |
+            Debugging auto-merge conditions:
+            - Is approved: {{ is.approved }}
+            - All checks passed: {{ is.all_checks_passed }}
+            - Has required reviews: {{ has.required_reviews }}
+            - Review decision: {{ pr.reviewDecision }}
+            - Successful checks: {{ pr.checks.success }}
+            - Total checks: {{ pr.checks.total }}
+            - Approved reviews count: {{ pr.reviews | filter(attr='state', value='APPROVED') | length }}
+      - action: merge@v1
+        args:
+          wait_for_all_checks: true
+          rebase_on_merge: true
 
 
 # Custom Calculations and Conditions
@@ -83,8 +83,8 @@ calc:
 
 has:
   # Check for ClickUp ticket references in the PR title or description using regex CU-[number].
-  clickup_ticket_in_title: {{ pr.title | includes(regex=r/CU-\d+/) }}
-  clickup_ticket_in_desc: {{ pr.description | includes(regex=r/CU-\d+/) }}
+  clickup_ticket_in_title: "{{ pr.title | includes(regex=r'CУ-\d+') }}"
+  clickup_ticket_in_desc: "{{ pr.description | includes(regex=r'CУ-\d+') }}"
   # Check if the PR has the required number of approved reviews.
   required_reviews: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
