@@ -53,26 +53,27 @@ automations:
 
   # 5. Automatically merge the PR if it's approved and all checks passed.
   auto_merge:
-    if:
-      - "{{ is.approved }}"
-      - "{{ is.all_checks_passed }}"
-      - "{{ has.required_reviews }}"
-    run:
-      - action: add-comment@v1
-        args:
-          comment: |
-            Debug information for auto-merge:
-            - Is approved: {{ is.approved }}
-            - All checks passed: {{ is.all_checks_passed }}
-            - Has required reviews: {{ has.required_reviews }}
-            - Review decision: {{ pr.reviewDecision }}
-            - Successful checks: {{ pr.checks.success }}
-            - Total checks: {{ pr.checks.total }}
-            - Approved reviews count: {{ pr.reviews | filter(attr='state', value='APPROVED') | length }}
-      - action: merge@v1
-        args:
-          wait_for_all_checks: true
-          rebase_on_merge: true
+  if:
+    - "{{ is.approved }}"
+    - "{{ is.all_checks_passed }}"
+    - "{{ has.required_reviews }}"
+  run:
+    - action: add-comment@v1
+      args:
+        comment: |
+          Debugging auto-merge conditions:
+          - Is approved: {{ is.approved }}
+          - All checks passed: {{ is.all_checks_passed }}
+          - Has required reviews: {{ has.required_reviews }}
+          - Review decision: {{ pr.reviewDecision }}
+          - Successful checks: {{ pr.checks.success }}
+          - Total checks: {{ pr.checks.total }}
+          - Approved reviews count: {{ pr.reviews | filter(attr='state', value='APPROVED') | length }}
+    - action: merge@v1
+      args:
+        wait_for_all_checks: true
+        rebase_on_merge: true
+
 
 # Custom Calculations and Conditions
 
