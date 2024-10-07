@@ -1,17 +1,62 @@
 # -*- mode: yaml -*-
+# This example configuration provides basic automations to get started with GitStream.
+# View the GitStream quickstart for more examples: https://docs.gitstream.cm/examples/
 
 manifest:
   version: 1.0
 
 automations:
-  # ... [previous automations remain unchanged]
+  # Add a label that indicates how many minutes it will take to review the PR.
+  estimated_time_to_review:
+    if:
+      - true
+    run:
+      - action: add-label@v1
+        args:
+          label: "{{ calc.etr }} min review"
+          color: "{{ colors.red if (calc.etr >= 20) else (colors.yellow if (calc.etr >= 5) else colors.green) }}"
 
-  # Auto-merge rule with debug logging
+  # Inform PR authors when they fail to reference Jira tickets in the PR title or description.
+  label_missing_jira_info:
+    if:
+      - "{{ not (has.jira_ticket_in_title or has.jira_ticket_in_desc) }}"
+    run:
+      - action: add-label@v1
+        args:
+          label: "missing-jira"
+          color: "{{ colors.red }}"
+      - action: add-comment@v1
+        args:
+          comment: |
+            This PR is missing a Jira ticket reference in the title or description.
+            Please add a Jira ticket reference to the title or description of this PR.
+
+  # Post a comment that lists the best experts for the files that were modified.
+  explain_code_experts:
+    if:
+      - true
+    run:
+      - action: explain-code-experts@v1
+        args:
+          gt: 10
+
+  # Triggered when someone applies a suggest-reviewer label to a PR.
+  assign_code_experts:
+    if:
+      - "{{ pr.labels | match(term='suggest-reviewer') | some }}"
+    run:
+      - action: add-reviewers@v1
+        args:
+          reviewers: "{{ repo | codeExperts(gt=10) }}"
+      - action: explain-code-experts@v1
+        args:
+          gt: 10
+
   auto_merge:
     if:
-      - {{ is.approved }}
-      - {{ is.all_checks_passed }}
-      - {{ has.required_reviews }}
+      - "{{ is.approved }}"
+      - "{{ is.all_checks_passed }}"
+      - "{{ has.required_reviews }}"
     run:
       - action: add-comment@v1
         args:
@@ -32,16 +77,16 @@ automations:
 # Custom Expressions
 
 calc:
-  etr: {{ branch | estimatedReviewTime }}
+  etr: "{{ branch | estimatedReviewTime }}"
 
 has:
-  jira_ticket_in_title: {{ pr.title | includes(regex=r/\b[A-Za-z]+-\d+\b/) }}
-  jira_ticket_in_desc: {{ pr.description | includes(regex=r/atlassian.net\/browse\/\w{1,}-\d{3,4}/) }}
-  required_reviews: {{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}
+  jira_ticket_in_title: "{{ pr.title | includes(regex=r/\b[A-Za-z]+-\d+\b/) }}"
+  jira_ticket_in_desc: "{{ pr.description | includes(regex=r/atlassian.net\/browse\/\w{1,}-\d{3,4}/) }}"
+  required_reviews: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
 is:
-  approved: {{ pr.reviewDecision == 'APPROVED' or pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}
-  all_checks_passed: {{ pr.checks.success == pr.checks.total }}
+  approved: "{{ pr.reviewDecision == 'APPROVED' or pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
+  all_checks_passed: "{{ pr.checks.success == pr.checks.total }}"
 
 colors:
   red: 'b60205'
