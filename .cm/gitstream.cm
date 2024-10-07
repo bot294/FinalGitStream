@@ -74,7 +74,6 @@ automations:
           wait_for_all_checks: true
           rebase_on_merge: true
 
-
 # Custom Calculations and Conditions
 
 calc:
@@ -83,8 +82,8 @@ calc:
 
 has:
   # Check for ClickUp ticket references in the PR title or description using regex CU-[number].
-  clickup_ticket_in_title: "{{ pr.title | includes(regex=r'CУ-\d+') }}"
-  clickup_ticket_in_desc: "{{ pr.description | includes(regex=r'CУ-\d+') }}"
+  clickup_ticket_in_title: "{{ pr.title | includes(regex=r'C(U|u)-\d+') }}"
+  clickup_ticket_in_desc: "{{ pr.description | includes(regex=r'C(U|u)-\d+') }}"
   # Check if the PR has the required number of approved reviews.
   required_reviews: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
