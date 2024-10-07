@@ -76,7 +76,7 @@ jobs:
       
       - name: Evaluate GitStream Rules
         id: rules-engine
-        continue-on-error: true
+        continue-on-error: false
         run: |
          output=$(linear-b/gitstream-github-action@v2 \
             --full_repository "${{ steps.set-inputs.outputs.full_repository}}" \
