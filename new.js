@@ -5,8 +5,8 @@ function call_new_one()
 new_one();
 }
 
-function call_call()
+function call_Call()
 {
 call_new_one();
 }
-call_call();
+call_Call();
