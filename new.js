@@ -5,5 +5,5 @@ function call_new_one()
 new_one();
 }
 
-
 call_new_one();
+
