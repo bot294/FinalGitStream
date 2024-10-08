@@ -17,19 +17,6 @@ automations:
           color: "{{ colors.red if (calc.etr >= 20) else (colors.yellow if (calc.etr >= 5) else colors.green) }}"
 
   # Inform PR authors when they fail to reference Jira tickets in the PR title or description.
-  label_missing_clickup_info:
-    if:
-      - {{ not (has.clickup_ticket_in_title or has.clickup_ticket_in_desc) }}
-    run:
-      - action: add-label@v1
-        args:
-          label: "missing-clickup"
-          color: {{ colors.red }}
-      - action: add-comment@v1
-        args:
-          comment: |
-            This PR is missing a ClickUp ticket reference in the title or description.
-            Please add a ClickUp ticket reference to the title or description of this PR.
   # Post a comment that lists the best experts for the files that were modified.
   explain_code_experts:
     if:
