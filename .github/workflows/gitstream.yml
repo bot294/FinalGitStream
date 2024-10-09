@@ -98,7 +98,7 @@ jobs:
           ACTIONS_STEP_DEBUG: true
         uses: linear-b/gitstream-github-action@v2
         with:
-          full_repository: ${{ steps.set-inputs.outputs.full_repository}}
+          full_repository: ${{ steps.set-inputs.outputs.full_repository }}
           head_ref: ${{ steps.set-inputs.outputs.head_ref }}
           base_ref: ${{ steps.set-inputs.outputs.base_ref }}
           client_payload: ${{ steps.set-inputs.outputs.client_payload }}
@@ -199,3 +199,4 @@ jobs:
                 body: 'ESLint check failed. Please review the workflow logs for details.'
               });
             }
+
