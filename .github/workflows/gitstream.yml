@@ -1,3 +1,4 @@
+
 name: gitStream and ESLint Checks
 
 permissions:
@@ -98,7 +99,7 @@ jobs:
           ACTIONS_STEP_DEBUG: true
         uses: linear-b/gitstream-github-action@v2
         with:
-          full_repository: ${{ steps.set-inputs.outputs.full_repository }}
+          full_repository: ${{ steps.set-inputs.outputs.full_repository}}
           head_ref: ${{ steps.set-inputs.outputs.head_ref }}
           base_ref: ${{ steps.set-inputs.outputs.base_ref }}
           client_payload: ${{ steps.set-inputs.outputs.client_payload }}
@@ -106,23 +107,17 @@ jobs:
           resolver_url: ${{ github.event.inputs.resolver_url }}
           resolver_token: ${{ github.event.inputs.resolver_token || secrets.RESOLVER_TOKEN }}
       
-      - name: Debug gitStream output
-        if: always()
-        run: |
-          echo "GitStream status: ${{ steps.rules-engine.outcome }}"
-          echo "GitStream output: ${{ steps.rules-engine.outputs.result }}"
-      
       - name: Report gitStream status
         if: always()
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const status = '${{ steps.rules-engine.outcome }}' === 'failure' ? 'success' : 'success';
-            const description = '${{ steps.rules-engine.outcome }}' === 'failure' 
+            const status = '${{ steps.rules-engine.outcome }}' === 'failure' ? 'failure' : 'success';
+            const description = status === 'failure'
               ? 'GitStream encountered non-critical errors but workflow continued'
               : 'GitStream job completed successfully';
-            
+
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -131,8 +126,8 @@ jobs:
               context: 'GitStream Check',
               description: description
             });
-            
-            if ('${{ steps.rules-engine.outcome }}' === 'failure') {
+
+            if (status === 'failure') {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -140,17 +135,6 @@ jobs:
                 body: 'GitStream encountered non-critical errors but the workflow continued. Please review the logs if needed.'
               });
             }
-      
-      - name: Handle Git Errors
-        if: failure()
-        run: |
-          echo "Checking for Git errors..."
-          if git rev-parse HEAD; then
-            echo "Git repository is fine."
-          else
-            echo "Git repository error detected. Resetting repository..."
-            git fetch --all
-            git reset --hard origin/${{ github.base_ref || 'main' }}
 
   lint:
     runs-on: ubuntu-latest
@@ -179,4 +163,23 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const status = '${{ steps.eslint.outcome }}' === 'failure' ? 'failure'
+            const status = '${{ steps.eslint.outcome }}' === 'failure' ? 'failure' : 'success';
+            const description = status === 'failure' ? 'ESLint found issues' : 'ESLint check passed';
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: status,
+              context: 'ESLint Check',
+              description: description
+            });
+
+            if (status === 'failure') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: 'ESLint check failed. Please review the workflow logs for details.'
+              });
+            }
