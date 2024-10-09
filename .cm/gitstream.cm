@@ -9,7 +9,7 @@ automations:
     run:
       - action: add-reviewers@v1
         args:
-          reviewers: "{{ repo | codeExperts(gt=10) }}, my-defined-reviewer"
+          reviewers: "{{ repo | codeExperts(gt=10) }}, bot294"
       - action: explain-code-experts@v1
         args:
           gt: 10
@@ -35,7 +35,7 @@ automations:
 
 has:
   # Defined reviewer must approve the PR
-  defined_reviewer_approved: "{{ pr.reviews | filter(attr='login', value='my-defined-reviewer') | filter(attr='state', value='APPROVED') | length >= 1 }}"
+  defined_reviewer_approved: "{{ pr.reviews | filter(attr='login', value='bot294') | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
 is:
   # Check if defined reviewer has approved and all checks have passed
