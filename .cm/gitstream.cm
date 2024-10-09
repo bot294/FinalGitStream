@@ -4,8 +4,8 @@ manifest:
 
 # Define manual reviewers
 manual_reviewers: &manual_reviewers
-  - manualReviewer1  # Replace with actual GitHub username
-  - manualReviewer2  # Replace with actual GitHub username
+  - bot294  # Replace with actual GitHub username
+
 
 automations:
   estimated_time_to_review:
