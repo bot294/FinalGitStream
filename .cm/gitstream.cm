@@ -37,6 +37,13 @@ automations:
       - action: explain-code-experts@v1
         args:
           gt: 10
+  assign_manual_reviewer:
+    if: 
+     - true
+    run:
+     -action: add-reviewer@v1
+      args:
+        reviewers: ["bot294"]
 
   auto_merge:
     if:
