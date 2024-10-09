@@ -37,7 +37,7 @@ automations:
       - action: explain-code-experts@v1
         args:
           gt: 10
-
+ 
   auto_merge:
     if:
       - "{{ is.approved }}"
@@ -78,3 +78,4 @@ colors:
   red: 'b60205'
   yellow: 'fbca04'
   green: '0e8a16'
+
