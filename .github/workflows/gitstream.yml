@@ -111,6 +111,8 @@ jobs:
         run: |
           echo "GitStream status: ${{ steps.rules-engine.outcome }}"
           echo "GitStream output: ${{ steps.rules-engine.outputs.result }}"
+            echo "Assigned reviewers: ${{ toJson(github.event.pull_request.requested_reviewers) }}"
+          echo "Manual reviewers assigned: ${{ contains(toJson(github.event.pull_request.requested_reviewers), 'bot294')}}"
       
       - name: Report gitStream status
         if: always()
