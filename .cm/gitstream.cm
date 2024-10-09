@@ -37,13 +37,13 @@ automations:
       - action: explain-code-experts@v1
         args:
           gt: 10
-  assign_manual_reviewer:
-    if: 
-     - true
+  assign_manual_review:
+    if:
+      - true  # This triggers the automation for all PRs
     run:
-     -action: add-reviewer@v1
-      args:
-        reviewers: ["bot294"]
+      - action: add-reviewer@v1  # Action to add reviewer
+        args:
+          reviewers: ["bot294"] 
 
   auto_merge:
     if:
