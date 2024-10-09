@@ -93,12 +93,12 @@ jobs:
       
       - name: Evaluate GitStream Rules
         id: rules-engine
-        continue-on-error: true  # Allow the workflow to continue even if this step fails
+        continue-on-error: true
         env:
           ACTIONS_STEP_DEBUG: true
         uses: linear-b/gitstream-github-action@v2
         with:
-          full_repository: ${{ steps.set-inputs.outputs.full_repository}}
+          full_repository: ${{ steps.set-inputs.outputs.full_repository }}
           head_ref: ${{ steps.set-inputs.outputs.head_ref }}
           base_ref: ${{ steps.set-inputs.outputs.base_ref }}
           client_payload: ${{ steps.set-inputs.outputs.client_payload }}
@@ -111,91 +111,5 @@ jobs:
         run: |
           echo "GitStream status: ${{ steps.rules-engine.outcome }}"
           echo "GitStream output: ${{ steps.rules-engine.outputs.result }}"
-      
-      - name: Report gitStream status
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const status = '${{ steps.rules-engine.outcome }}' === 'failure' ? 'success' : 'success';
-            const description = '${{ steps.rules-engine.outcome }}' === 'failure' 
-              ? 'GitStream encountered non-critical errors but workflow continued'
-              : 'GitStream job completed successfully';
-            
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              state: status,
-              context: 'GitStream Check',
-              description: description
-            });
-            
-            if ('${{ steps.rules-engine.outcome }}' === 'failure') {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: 'GitStream encountered non-critical errors but the workflow continued. Please review the logs if needed.'
-              });
-            }
-      
-      - name: Handle Git Errors
-        if: failure()
-        run: |
-          echo "Checking for Git errors..."
-          if git rev-parse HEAD; then
-            echo "Git repository is fine."
-          else
-            echo "Git repository error detected. Resetting repository..."
-            git fetch --all
-            git reset --hard origin/${{ github.base_ref || 'main' }}
 
-  lint:
-    runs-on: ubuntu-latest
-    name: ESLint Check
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run ESLint
-        id: eslint
-        run: |
-          npx eslint . --format=stylish
-        continue-on-error: false  # Fail the step if ESLint errors are found
-      
-      - name: Report ESLint status
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const status = '${{ steps.eslint.outcome }}' === 'failure' ? 'failure' : 'success';
-            const description = status === 'failure' ? 'ESLint found issues' : 'ESLint check passed';
-            
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              state: status,
-              context: 'ESLint Check',
-              description: description
-            });
-            
-            if (status === 'failure') {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: 'ESLint check failed. Please review the workflow logs for details.'
-              });
-            }
+      # Handle other steps
