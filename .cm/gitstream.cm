@@ -1,7 +1,4 @@
 # -*- mode: yaml -*-
-# This example configuration provides basic automations to get started with GitStream.
-# View the GitStream quickstart for more examples: https://docs.gitstream.cm/examples/
-
 manifest:
   version: 1.0
 
@@ -16,8 +13,7 @@ automations:
           label: "{{ calc.etr }} min review"
           color: "{{ colors.red if (calc.etr >= 20) else (colors.yellow if (calc.etr >= 5) else colors.green) }}"
 
-  # Inform PR authors when they fail to reference Jira tickets in the PR title or description.
-  # Post a comment that lists the best experts for the files that were modified.
+  # Inform PR authors when they fail to reference ClickUp tickets in the PR title or description.
   explain_code_experts:
     if:
       - true
@@ -26,7 +22,7 @@ automations:
         args:
           gt: 10
 
-  # Triggered when someone applies a suggest-reviewer label to a PR.
+  # Assign code experts when the 'suggest-reviewer' label is applied.
   assign_code_experts:
     if:
       - "{{ pr.labels | match(term='suggest-reviewer') | some }}"
@@ -38,17 +34,19 @@ automations:
         args:
           gt: 10
 
- assign_manual_reviewer:
-  if:
-   - true
-  run:
-   -actions: add-reviewer@v1
-   args:
-    reviewers : "bot294"
+  # Assign a manual reviewer.
+  assign_manual_reviewer:
+    if:
+      - true
+    run:
+      - action: add-reviewers@v1
+        args:
+          reviewers: "bot294"  # Replace 'bot294' with the manual reviewer’s GitHub username if needed.
 
+  # Auto-merge the PR if it is approved and all checks pass, including manual review.
   auto_merge:
     if:
-      - "{{ is.approved_by_defined_reviewer}}"
+      - "{{ is.approved_by_defined_reviewer }}"  # Ensure the manual reviewer approved
       - "{{ is.all_checks_passed }}"
       - "{{ has.required_reviews }}"
     run:
@@ -56,7 +54,7 @@ automations:
         args:
           comment: |
             Debug information for auto-merge:
-            - Is approved: {{ is.approved }}
+            - Is approved by defined reviewer: {{ is.approved_by_defined_reviewer }}
             - All checks passed: {{ is.all_checks_passed }}
             - Has required reviews: {{ has.required_reviews }}
             - Review decision: {{ pr.reviewDecision }}
@@ -74,12 +72,12 @@ calc:
   etr: "{{ branch | estimatedReviewTime }}"
 
 has:
-  clickup_ticket_in_title: {{ pr.title | includes(regex=r/CU-\d+/) }}
-  clickup_ticket_in_desc: {{ pr.description | includes(regex=r/CU-\d+/) }}
+  clickup_ticket_in_title: "{{ pr.title | includes(regex=r/CU-\d+/) }}"
+  clickup_ticket_in_desc: "{{ pr.description | includes(regex=r/CU-\d+/) }}"
   required_reviews: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
 is:
-  pproved_by_defined_reviewer: "{{ pr.reviews | filter(attr='login', value='bot294') | filter(attr='state', value='APPROVED') | length >= 1 }}"
+  approved_by_defined_reviewer: "{{ pr.reviews | filter(attr='login', value='bot294') | filter(attr='state', value='APPROVED') | length >= 1 }}"
   all_checks_passed: "{{ pr.checks.success == pr.checks.total }}"
   approved: "{{ pr.reviewDecision == 'APPROVED' or pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
@@ -87,4 +85,3 @@ colors:
   red: 'b60205'
   yellow: 'fbca04'
   green: '0e8a16'
-
