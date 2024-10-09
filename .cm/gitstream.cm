@@ -38,9 +38,17 @@ automations:
         args:
           gt: 10
 
+ assign_manual_reviewer:
+  if:
+   - true
+  run:
+   -actions: add-reviewer@v1
+   args:
+    reviewers : "bot294"
+
   auto_merge:
     if:
-      - "{{ is.approved }}"
+      - "{{ is.approved_by_defined_reviewer}}"
       - "{{ is.all_checks_passed }}"
       - "{{ has.required_reviews }}"
     run:
@@ -71,8 +79,9 @@ has:
   required_reviews: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
 is:
-  approved: "{{ pr.reviewDecision == 'APPROVED' or pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
+  pproved_by_defined_reviewer: "{{ pr.reviews | filter(attr='login', value='bot294') | filter(attr='state', value='APPROVED') | length >= 1 }}"
   all_checks_passed: "{{ pr.checks.success == pr.checks.total }}"
+  approved: "{{ pr.reviewDecision == 'APPROVED' or pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
 colors:
   red: 'b60205'
