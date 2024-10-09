@@ -33,11 +33,11 @@ automations:
     run:
       - action: add-reviewers@v1
         args:
-          reviewers: "{{ repo | codeExperts(gt=10) }}, bot294"  # Add bot294 as a manual reviewer
+          reviewers: "{{ repo | codeExperts(gt=10) }}"
       - action: explain-code-experts@v1
         args:
           gt: 10
-
+ 
   auto_merge:
     if:
       - "{{ is.approved }}"
@@ -68,13 +68,14 @@ calc:
 has:
   clickup_ticket_in_title: {{ pr.title | includes(regex=r/CU-\d+/) }}
   clickup_ticket_in_desc: {{ pr.description | includes(regex=r/CU-\d+/) }}
-  required_reviews: "{{ pr.reviews | filter(attr='login', value='bot294') | filter(attr='state', value='APPROVED') | length >= 1 }}"  # Check approval from bot294
+  required_reviews: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
 is:
-  approved: "{{ pr.reviewDecision == 'APPROVED' or pr.reviews | filter(attr='login', value='bot294') | filter(attr='state', value='APPROVED') | length >= 1 or pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
+  approved: "{{ pr.reviewDecision == 'APPROVED' or pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
   all_checks_passed: "{{ pr.checks.success == pr.checks.total }}"
 
 colors:
   red: 'b60205'
   yellow: 'fbca04'
   green: '0e8a16'
+
