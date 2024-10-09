@@ -31,7 +31,7 @@ automations:
         args:
           gt: 10
 
-  auto_merge:
+   auto_merge:
     if:
       - "{{ is.approved }}"
       - "{{ is.all_checks_passed }}"
@@ -40,19 +40,20 @@ automations:
       - action: add-comment@v1
         args:
           comment: |
-            Debug information for auto-merge:
+            **Debug information for auto-merge:**
             - Is approved: {{ is.approved }}
             - All checks passed: {{ is.all_checks_passed }}
             - Has required reviews: {{ has.required_reviews }}
             - Review decision: {{ pr.reviewDecision }}
-            - Successful checks: {{ pr.checks.success }}
-            - Total checks: {{ pr.checks.total }}
             - Approved reviews count: {{ pr.reviews | filter(attr='state', value='APPROVED') | length }}
+            - Total successful checks: {{ pr.checks.success }}
+            - Total checks: {{ pr.checks.total }}
             - Skipped checks count: {{ pr.checks.skipped }}
       - action: merge@v1
         args:
           wait_for_all_checks: true
           rebase_on_merge: true
+
 
   # This example automation adds a comment whenever someone updates a pull request.
   on_pull_request_update:
