@@ -8,7 +8,6 @@ manifest:
 automations:
   # Add a label that indicates how many minutes it will take to review the PR.
 
-
   # Inform PR authors when they fail to reference ClickUp tickets in the PR title or description.
   # Post a comment that lists the best experts for the files that were modified.
   explain_code_experts:
@@ -31,7 +30,8 @@ automations:
         args:
           gt: 10
 
-   auto_merge:
+  # Auto-merge automation
+  auto_merge:
     if:
       - "{{ is.approved }}"
       - "{{ is.all_checks_passed }}"
@@ -54,7 +54,6 @@ automations:
           wait_for_all_checks: true
           rebase_on_merge: true
 
-
   # This example automation adds a comment whenever someone updates a pull request.
   on_pull_request_update:
     if:
@@ -63,4 +62,3 @@ automations:
       - action: add-comment@v1
         args:
           comment: "This pull request has been updated."
-
