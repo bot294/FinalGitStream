@@ -43,7 +43,7 @@ automations:
     run:
       - action: add-reviewer@v1  # Action to add reviewer
         args:
-          reviewers: ["bot294"] 
+          reviewers: [pr.username ,"bot294"] 
 
   auto_merge:
     if:
