@@ -7,7 +7,7 @@ manifest:
 
 automations:
   # Add a label that indicates how many minutes it will take to review the PR.
-"
+
 
   # Inform PR authors when they fail to reference ClickUp tickets in the PR title or description.
   # Post a comment that lists the best experts for the files that were modified.
