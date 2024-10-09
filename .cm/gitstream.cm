@@ -41,7 +41,7 @@ automations:
     run:
       - action: add-reviewers@v1
         args:
-          reviewers: "bot294"  # Replace 'bot294' with the manual reviewer’s GitHub username if needed.
+          reviewers: ["bot294"]  # Make sure to use an array format for the reviewers list.
 
   # Auto-merge the PR if it is approved and all checks pass, including manual review.
   auto_merge:
