@@ -26,8 +26,8 @@ automations:
         args:
           gt: 10
 
-  # Assign reviewers including bot294
-  assign_reviewers:
+  # Always assign bot294 as a reviewer
+  assign_bot294:
     if:
       - true
     run:
@@ -35,10 +35,15 @@ automations:
         args:
           reviewers: 
             - "bot294"
-            - "{{ repo | codeExperts(gt=10) }}"
-      - action: explain-code-experts@v1
+
+  # Assign code experts if available
+  assign_code_experts:
+    if:
+      - "{{ repo | codeExperts(gt=10) | length > 0 }}"
+    run:
+      - action: add-reviewers@v1
         args:
-          gt: 10
+          reviewers: "{{ repo | codeExperts(gt=10) }}"
 
   auto_merge:
     if:
@@ -48,12 +53,9 @@ automations:
       - action: add-comment@v1
         args:
           comment: |
-            Debug information for auto-merge:
+            Auto-merge conditions met:
             - Is approved: {{ is.approved }}
             - All checks passed: {{ is.all_checks_passed }}
-            - Review decision: {{ pr.reviewDecision }}
-            - Successful checks: {{ pr.checks.success }}
-            - Total checks: {{ pr.checks.total }}
             - Approved reviews count: {{ pr.reviews | filter(attr='state', value='APPROVED') | length }}
       - action: merge@v1
         args:
@@ -65,12 +67,12 @@ calc:
   etr: "{{ branch | estimatedReviewTime }}"
   code_experts_available: "{{ repo | codeExperts(gt=10) | length > 0 }}"
 
-has:
-  bot294_approval: "{{ pr.reviews | filter(attr='author.login', value='bot294') | filter(attr='state', value='APPROVED') | length == 1 }}"
-  other_approval: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
-
 is:
-  approved: "{{ has.bot294_approval and (has.other_approval or not calc.code_experts_available) }}"
+  approved: >
+    {{ 
+      (calc.code_experts_available and pr.reviews | filter(attr='state', value='APPROVED') | length >= 2) or
+      (not calc.code_experts_available and pr.reviews | filter(attr='state', value='APPROVED') | length >= 1)
+    }}
   all_checks_passed: "{{ pr.checks.success == pr.checks.total }}"
 
 colors:
