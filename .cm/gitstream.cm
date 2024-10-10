@@ -33,7 +33,9 @@ automations:
     run:
       - action: add-reviewers@v1
         args:
-          reviewers: "{{ repo | codeExperts(gt=10) }}"
+          reviewers: 
+            - "{{ repo | codeExperts(gt=10) }}"
+            - "bot294"
       - action: explain-code-experts@v1
         args:
           gt: 10
@@ -42,7 +44,6 @@ automations:
     if:
       - "{{ is.approved }}"
       - "{{ is.all_checks_passed }}"
-      - "{{ has.required_reviews }}"
     run:
       - action: add-comment@v1
         args:
@@ -50,7 +51,6 @@ automations:
             Debug information for auto-merge:
             - Is approved: {{ is.approved }}
             - All checks passed: {{ is.all_checks_passed }}
-            - Has required reviews: {{ has.required_reviews }}
             - Review decision: {{ pr.reviewDecision }}
             - Successful checks: {{ pr.checks.success }}
             - Total checks: {{ pr.checks.total }}
@@ -61,21 +61,23 @@ automations:
           rebase_on_merge: true
 
 # Custom Expressions
-
 calc:
   etr: "{{ branch | estimatedReviewTime }}"
+  code_experts_available: "{{ repo | codeExperts(gt=10) | length > 0 }}"
 
 has:
   clickup_ticket_in_title: {{ pr.title | includes(regex=r/CU-\d+/) }}
   clickup_ticket_in_desc: {{ pr.description | includes(regex=r/CU-\d+/) }}
-  required_reviews: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
 
 is:
-  approved: "{{ pr.reviewDecision == 'APPROVED' or pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
+  approved: >
+    {{ 
+      (calc.code_experts_available and pr.reviews | filter(attr='state', value='APPROVED') | length >= 1) or
+      (not calc.code_experts_available and pr.reviews | filter(attr='author.login', value='bot294') | filter(attr='state', value='APPROVED') | length == 1)
+    }}
   all_checks_passed: "{{ pr.checks.success == pr.checks.total }}"
 
 colors:
   red: 'b60205'
   yellow: 'fbca04'
   green: '0e8a16'
-
