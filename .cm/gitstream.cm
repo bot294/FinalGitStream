@@ -35,7 +35,7 @@ automations:
         args:
           reviewers: 
             - bot294
-      - action: request-reviewers@v1
+      - action: add-reviewers@v1
         args:
           reviewers: 
             - bot294
