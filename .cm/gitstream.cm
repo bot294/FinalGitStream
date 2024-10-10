@@ -16,25 +16,11 @@ automations:
           label: "{{ calc.etr }} min review"
           color: "{{ colors.red if (calc.etr >= 20) else (colors.yellow if (calc.etr >= 5) else colors.green) }}"
 
-  # Inform PR authors when they fail to reference Jira tickets in the PR title or description.
-  # Post a comment that lists the best experts for the files that were modified.
-  explain_code_experts:
+  # Assign bot294 as a reviewer
+  assign_bot294:
     if:
       - true
     run:
-      - action: explain-code-experts@v1
-        args:
-          gt: 10
-
-  # Always assign bot294 as a reviewer
-  assign_reviewers:
-    if:
-      - true
-    run:
-      - action: add-reviewers@v1
-        args:
-          reviewers: 
-            - bot294
       - action: add-reviewers@v1
         args:
           reviewers: 
