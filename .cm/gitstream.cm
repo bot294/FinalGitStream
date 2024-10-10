@@ -27,23 +27,18 @@ automations:
           gt: 10
 
   # Always assign bot294 as a reviewer
-  assign_bot294:
+  assign_reviewers:
     if:
       - true
     run:
       - action: add-reviewers@v1
         args:
           reviewers: 
-            - "bot294"
-
-  # Assign code experts if available
-  assign_code_experts:
-    if:
-      - "{{ repo | codeExperts(gt=10) | length > 0 }}"
-    run:
-      - action: add-reviewers@v1
+            - bot294
+      - action: request-reviewers@v1
         args:
-          reviewers: "{{ repo | codeExperts(gt=10) }}"
+          reviewers: 
+            - bot294
 
   auto_merge:
     if:
@@ -65,14 +60,9 @@ automations:
 # Custom Expressions
 calc:
   etr: "{{ branch | estimatedReviewTime }}"
-  code_experts_available: "{{ repo | codeExperts(gt=10) | length > 0 }}"
 
 is:
-  approved: >
-    {{ 
-      (calc.code_experts_available and pr.reviews | filter(attr='state', value='APPROVED') | length >= 2) or
-      (not calc.code_experts_available and pr.reviews | filter(attr='state', value='APPROVED') | length >= 1)
-    }}
+  approved: "{{ pr.reviews | filter(attr='state', value='APPROVED') | length >= 1 }}"
   all_checks_passed: "{{ pr.checks.success == pr.checks.total }}"
 
 colors:
