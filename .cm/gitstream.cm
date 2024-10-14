@@ -17,7 +17,7 @@ automations:
           color: "{{ colors.red if (calc.etr >= 20) else (colors.yellow if (calc.etr >= 5) else colors.green) }}"
 
   # Assign bot294 as a reviewer
-  assign_bot294:
+  assign_manual_reviewer:
     if:
       - true
     run:
